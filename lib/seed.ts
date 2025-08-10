@@ -36,16 +36,17 @@ export async function seedProducts() {
       description: "Topical CBD with arnica and menthol.",
       benefit: "Recovery",
       priceCents: 3500,
-      imageUrl: "https://images.unsplash.com/photo-1601597111158-2fceffablb93",
+      imageUrl: "https://images.unsplash.com/photo-1601597111158-2fceffab1b93",
       subscriptionEligible: false,
     },
   ];
 
-  for (const product of products) {
+  // Upsert to be idempotent (safe to run multiple times)
+  for (const p of products) {
     await prisma.product.upsert({
-      where: { slug: product.slug },
-      update: product,
-      create: product,
+      where: { slug: p.slug },
+      update: p,
+      create: p,
     });
   }
 }
