@@ -1,29 +1,42 @@
-export const dynamic = 'force-dynamic';
-import Image from "next/image"
-import { prisma } from "@/lib/db"
-import { autoSeed } from "@/lib/seed"
+// app/products/page.tsx
+import { prisma } from "@/lib/db";
+import { seedProducts } from "@/lib/seed";
 
-function money(n:number){ return new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(n/100) }
+export default async function ProductsPage() {
+  // Auto-seed products if none exist
+  const productCount = await prisma.product.count();
+  if (productCount === 0) {
+    await seedProducts();
+  }
 
-export default async function ProductsPage(){
-  await autoSeed()
-  let products:any[] = []
-  try{
-    products = await prisma.product.findMany({ orderBy: { createdAt: 'desc' } })
-  }catch{ products = [] }
-  return <section className="section">
-    <h1>Shop</h1>
-    {products.length===0 ? <p>No products yet.</p> :
-      <div className="grid">
-        {products.map((p:any)=>(
-          <article key={p.id} className="card">
-            {p.imageUrl && <Image src={p.imageUrl} alt={p.name} width={600} height={400}/>}
-            <h3>{p.name}</h3>
-            <p style={{opacity:.8}}>{p.benefit} {p.subscriptionEligible ? "• Subscribe & save 15%" : ""}</p>
-            <p className="price">{money(p.priceCents)}</p>
-          </article>
+  const products = await prisma.product.findMany({
+    orderBy: { name: "asc" },
+  });
+
+  return (
+    <main className="p-8">
+      <h1 className="text-3xl font-bold mb-6">Products</h1>
+      {products.length === 0 && <p>No products available.</p>}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {products.map((product) => (
+          <div
+            key={product.id}
+            className="border p-4 rounded shadow hover:shadow-lg transition"
+          >
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="w-full h-48 object-cover mb-4 rounded"
+            />
+            <h2 className="text-xl font-semibold">{product.name}</h2>
+            <p className="text-gray-600">{product.description}</p>
+            <p className="mt-2 font-bold">${(product.priceCents / 100).toFixed(2)}</p>
+            {product.subscriptionEligible && (
+              <p className="text-sm text-green-600">Subscription available</p>
+            )}
+          </div>
         ))}
       </div>
-    }
-  </section>
+    </main>
+  );
 }
